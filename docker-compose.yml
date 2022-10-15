@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  database:
+    image: postgres
+    container_name: db-postgres
+    restart: always
+    ports:
+      - '${POSTGRES_PORT}:${POSTGRES_PORT}'
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  queue:
+    image: redis:6.2-alpine
+    container_name: queue-redis
+    restart: always
+    ports:
+      - '${REDIS_PORT}:${REDIS_PORT}'
+    command: redis-server --appendonly yes
+    volumes:
+      - cache:/data
+
+
+volumes:
+  cache:
+    driver: local
+  pgdata:
+    driver: local

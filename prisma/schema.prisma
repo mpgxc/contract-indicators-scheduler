@@ -1,0 +1,92 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator erd {
+  provider = "prisma-erd-generator"
+}
+
+enum FrequencyPattern {
+  DAILY_1
+  WEEKLY_7
+  MONTHLY_30
+  QUARTERLY_90
+  ANNUAL_365
+}
+
+model Contract {
+  id String @id @default(uuid())
+
+  customers                   Customer[]                    @relation("ContractCustomers")
+  indicators                  ContractIndicator[]
+  scheduledContractIndicators ScheduledContractIndicators[]
+
+  ownerId String
+  Owner   Customer @relation(fields: [ownerId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contracts")
+}
+
+model ContractIndicator {
+  id          String  @id @default(uuid())
+  type        String  @unique
+  balance     Decimal @db.Decimal(10, 2)
+  description String
+
+  scheduledContractIndicators ScheduledContractIndicators[]
+
+  Contract   Contract? @relation(fields: [contractId], references: [id])
+  contractId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("contract_indicators")
+}
+
+model ScheduledContractIndicators {
+  id String @id @default(uuid())
+
+  nextExecutionDate DateTime
+  lastExecutionDate DateTime?
+
+  frequency FrequencyPattern @default(MONTHLY_30)
+
+  ContractIndicator   ContractIndicator @relation(fields: [contractIndicatorId], references: [id])
+  contractIndicatorId String
+
+  Customer   Customer @relation(fields: [customerId], references: [id])
+  customerId String
+
+  Contract   Contract @relation(fields: [contractId], references: [id])
+  contractId String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("scheduled_contract_indicators")
+}
+
+model Customer {
+  id String @id @default(uuid())
+
+  username                    String                        @unique
+  scheduledContractIndicators ScheduledContractIndicators[]
+  contractsOwner              Contract[]
+
+  Contract   Contract? @relation("ContractCustomers", fields: [contractId], references: [id])
+  contractId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("customers")
+}
