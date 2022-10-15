@@ -1,4 +1,4 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import { Controller, Post, Body, Get } from '@nestjs/common';
 import { SchedulesService } from './schedules.service';
 import { CreateScheduleDto } from './schedules.input';
 
@@ -9,5 +9,10 @@ export class SchedulesController {
   @Post()
   create(@Body() createScheduleDto: CreateScheduleDto) {
     return this.schedulesService.create(createScheduleDto);
+  }
+
+  @Get()
+  findAll() {
+    return this.schedulesService.findAll();
   }
 }

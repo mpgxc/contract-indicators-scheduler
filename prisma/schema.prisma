@@ -45,12 +45,12 @@ model Contract {
 }
 
 model ContractIndicator {
-  id          String                @id @default(uuid())
-  type        ContractIndicatorType
-  balance     Decimal               @db.Decimal(10, 2)
-  threshold   Decimal               @db.Decimal(10, 2)
-  description String
-  lastBalance Json[]                @default([]) @db.Json
+  id             String                @id @default(uuid())
+  type           ContractIndicatorType
+  balance        Decimal               @db.Decimal(10, 2)
+  threshold      Decimal               @db.Decimal(10, 2)
+  description    String
+  historyBalance Json[]                @default([]) @db.Json
 
   ScheduledContractIndicators ScheduledContractIndicators?
 

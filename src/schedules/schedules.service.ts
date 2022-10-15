@@ -6,8 +6,14 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from 'src/database/database.service';
 import { CreateScheduleDto, FrequencyPatternUnion } from './schedules.input';
-import { ScheduledContractIndicators } from '@prisma/client';
+import {
+  ScheduledContractIndicators as ScheduledContractIndicatorsPrisma,
+  Contract as ContractPrisma,
+  ContractIndicator as ContractIndicatorPrisma,
+  Customer as CustomerPrisma,
+} from '@prisma/client';
 import dayjs from 'dayjs';
+import { ResponseSchedule, HistorySchedule } from './schedules.types';
 
 @Injectable()
 export class SchedulesService {
@@ -35,12 +41,50 @@ export class SchedulesService {
       } as Record<FrequencyPatternUnion, number>
     )[frequency]);
 
+  private mapperReponse = (
+    response: ScheduledContractIndicatorsPrisma & {
+      Customer: CustomerPrisma;
+      Contract: ContractPrisma;
+      ContractIndicator: ContractIndicatorPrisma;
+    },
+  ): ResponseSchedule => {
+    const { id, frequency, nextExecutionDate, lastExecutionDate } = response;
+
+    return {
+      id,
+      frequency,
+      nextExecutionDate,
+      lastExecutionDate,
+      ContractIndicator: {
+        id: response.ContractIndicator.id,
+        type: response.ContractIndicator.type,
+        ownerId: response.ContractIndicator.ownerId,
+        balance: String(response.ContractIndicator.balance),
+        threshold: String(response.ContractIndicator.threshold),
+        description: response.ContractIndicator.description,
+        historyBalance: response.ContractIndicator
+          .historyBalance as unknown as HistorySchedule[],
+      },
+      Contract: {
+        id: response.Contract.id,
+        ownerId: response.Contract.ownerId,
+      },
+      Customer: {
+        id: response.Customer.id,
+        userName: response.Customer.userName,
+      },
+    };
+  };
+
+  /**
+   *  Repositories methods
+   */
   async create({
     frequency,
     contractId,
     customerId,
     contractIndicatorId,
-  }: CreateScheduleDto): Promise<ScheduledContractIndicators> {
+  }: CreateScheduleDto): Promise<ScheduledContractIndicatorsPrisma> {
     this.logger.log(`Creating schedule for contract ${contractId}`);
 
     this.logger.log({
@@ -105,5 +149,17 @@ export class SchedulesService {
         contractIndicatorId,
       },
     });
+  }
+
+  async findAll(): Promise<ResponseSchedule[]> {
+    const response = await this.prisma.scheduledContractIndicators.findMany({
+      include: {
+        Customer: true,
+        Contract: true,
+        ContractIndicator: true,
+      },
+    });
+
+    return response.map(this.mapperReponse);
   }
 }
