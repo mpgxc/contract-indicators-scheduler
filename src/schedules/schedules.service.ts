@@ -2,6 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/database/database.service';
 import { CreateScheduleDto } from './dto/create-schedule.dto';
 import { UpdateScheduleDto } from './dto/update-schedule.dto';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class SchedulesService {
@@ -9,15 +10,10 @@ export class SchedulesService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  /**
-   *  Isso jamais deveria ser feito em um projeto real, mass.....
-   */
-  private nextDate(date: Date, days: number) {
-    const increasedDays = new Date(date);
+  private nextDate(date: Date, days = 0) {
+    const today = dayjs(date);
 
-    increasedDays.setDate(increasedDays.getDate() + days);
-
-    return increasedDays;
+    return today.add(days, 'days').format('YYYY-MM-DD');
   }
 
   private parseFrequency = (frequency: string) =>
