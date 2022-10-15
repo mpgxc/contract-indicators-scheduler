@@ -8,13 +8,17 @@ enum FrequencyPatternEnum {
   'ANNUAL_365',
 }
 
-export type FrequencyPattern = keyof typeof FrequencyPatternEnum;
+export type FrequencyPatternUnion = keyof typeof FrequencyPatternEnum;
+
+export const FrequencyPatternKeys = Object.keys(FrequencyPatternEnum).filter(
+  (key) => isNaN(Number(key)),
+);
 
 export class CreateScheduleDto {
   @IsString()
   @IsNotEmpty()
-  @IsIn(Object.values(FrequencyPatternEnum))
-  frequency: FrequencyPattern;
+  @IsIn(FrequencyPatternKeys)
+  frequency: FrequencyPatternUnion;
 
   @IsString()
   @IsNotEmpty()
