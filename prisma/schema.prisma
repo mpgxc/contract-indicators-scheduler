@@ -14,20 +14,29 @@ generator erd {
 enum FrequencyPattern {
   DAILY_1
   WEEKLY_7
+  BIWEEKLY_15
   MONTHLY_30
+  BIMONTHLY_60
   QUARTERLY_90
-  ANNUAL_365
+  SEMESTERLY_180
+  YEARLY_365
+}
+
+enum ContractIndicatorType {
+  MIN_BALANCE //Saldo Mínimo
+  FINANCIAL_FLOW //Fluxo Financeiro
+  AVERAGE_BALANCE //Saldo Médio
 }
 
 model Contract {
   id String @id @default(uuid())
 
-  customers                   Customer[]                    @relation("ContractCustomers")
-  indicators                  ContractIndicator[]
-  scheduledContractIndicators ScheduledContractIndicators[]
+  customers Customer[] @relation("ContractCustomers")
 
   ownerId String
   Owner   Customer @relation(fields: [ownerId], references: [id])
+
+  ScheduledContractIndicators ScheduledContractIndicators[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -36,15 +45,17 @@ model Contract {
 }
 
 model ContractIndicator {
-  id          String  @id @default(uuid())
-  type        String  @unique
-  balance     Decimal @db.Decimal(10, 2)
+  id          String                @id @default(uuid())
+  type        ContractIndicatorType
+  balance     Decimal               @db.Decimal(10, 2)
+  threshold   Decimal               @db.Decimal(10, 2)
   description String
+  lastBalance Json[]                @default([]) @db.Json
 
-  scheduledContractIndicators ScheduledContractIndicators[]
+  ScheduledContractIndicators ScheduledContractIndicators?
 
-  Contract   Contract? @relation(fields: [contractId], references: [id])
-  contractId String?
+  ownerId String
+  Owner   Customer @relation(fields: [ownerId], references: [id])
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -61,13 +72,13 @@ model ScheduledContractIndicators {
   frequency FrequencyPattern @default(MONTHLY_30)
 
   ContractIndicator   ContractIndicator @relation(fields: [contractIndicatorId], references: [id])
-  contractIndicatorId String
-
-  Customer   Customer @relation(fields: [customerId], references: [id])
-  customerId String
+  contractIndicatorId String            @unique
 
   Contract   Contract @relation(fields: [contractId], references: [id])
   contractId String
+
+  Customer   Customer @relation(fields: [customerId], references: [id])
+  customerId String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -78,9 +89,10 @@ model ScheduledContractIndicators {
 model Customer {
   id String @id @default(uuid())
 
-  username                    String                        @unique
-  scheduledContractIndicators ScheduledContractIndicators[]
+  userName                    String                        @unique
   contractsOwner              Contract[]
+  contractIndicators          ContractIndicator[]
+  scheduledContractIndicators ScheduledContractIndicators[]
 
   Contract   Contract? @relation("ContractCustomers", fields: [contractId], references: [id])
   contractId String?

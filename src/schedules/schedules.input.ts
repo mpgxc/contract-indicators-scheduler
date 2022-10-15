@@ -3,9 +3,12 @@ import { IsIn, IsNotEmpty, IsString } from 'class-validator';
 enum FrequencyPatternEnum {
   'DAILY_1',
   'WEEKLY_7',
+  'BIWEEKLY_15',
   'MONTHLY_30',
+  'BIMONTHLY_60',
   'QUARTERLY_90',
-  'ANNUAL_365',
+  'SEMESTERLY_180',
+  'YEARLY_365',
 }
 
 export type FrequencyPatternUnion = keyof typeof FrequencyPatternEnum;

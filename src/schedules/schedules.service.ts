@@ -1,7 +1,12 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import {
+  Logger,
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/database/database.service';
-import { CreateScheduleDto } from './dto/create-schedule.dto';
-import { UpdateScheduleDto } from './dto/update-schedule.dto';
+import { CreateScheduleDto, FrequencyPatternUnion } from './schedules.input';
+import { ScheduledContractIndicators } from '@prisma/client';
 import dayjs from 'dayjs';
 
 @Injectable()
@@ -16,21 +21,26 @@ export class SchedulesService {
     return today.add(days, 'days').format('YYYY-MM-DD');
   }
 
-  private parseFrequency = (frequency: string) =>
-    ({
-      DAILY_1: 1,
-      WEEKLY_7: 7,
-      MONTHLY_30: 30,
-      QUARTERLY_90: 90,
-      ANNUAL_365: 365,
-    }[frequency]);
+  private parseFrequency = (frequency: FrequencyPatternUnion) =>
+    ((
+      {
+        DAILY_1: 1,
+        WEEKLY_7: 7,
+        BIWEEKLY_15: 15,
+        MONTHLY_30: 30,
+        BIMONTHLY_60: 60,
+        QUARTERLY_90: 90,
+        SEMESTERLY_180: 180,
+        YEARLY_365: 365,
+      } as Record<FrequencyPatternUnion, number>
+    )[frequency]);
 
   async create({
     frequency,
     contractId,
     customerId,
     contractIndicatorId,
-  }: CreateScheduleDto) {
+  }: CreateScheduleDto): Promise<ScheduledContractIndicators> {
     this.logger.log(`Creating schedule for contract ${contractId}`);
 
     this.logger.log({
@@ -39,6 +49,17 @@ export class SchedulesService {
       customerId,
       contractIndicatorId,
     });
+
+    const alredyScheduled =
+      await this.prisma.scheduledContractIndicators.findUnique({
+        where: { contractIndicatorId },
+      });
+
+    if (alredyScheduled) {
+      throw new ConflictException(
+        `Contract indicator ${contractIndicatorId} is already scheduled`,
+      );
+    }
 
     const customer = await this.prisma.customer.findUnique({
       where: {
@@ -80,25 +101,9 @@ export class SchedulesService {
         frequency,
         contractId,
         customerId,
-        nextExecutionDate,
+        nextExecutionDate: new Date(nextExecutionDate),
         contractIndicatorId,
       },
     });
-  }
-
-  findAll() {
-    return `This action returns all schedules`;
-  }
-
-  findOne(id: number) {
-    return `This action returns a #${id} schedule`;
-  }
-
-  update(id: number, updateScheduleDto: UpdateScheduleDto) {
-    return `This action updates a #${id} schedule`;
-  }
-
-  remove(id: number) {
-    return `This action removes a #${id} schedule`;
   }
 }

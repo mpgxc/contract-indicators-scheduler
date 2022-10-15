@@ -1,5 +1,8 @@
 -- CreateEnum
-CREATE TYPE "FrequencyPattern" AS ENUM ('DAILY_1', 'WEEKLY_7', 'MONTHLY_30', 'QUARTERLY_90', 'ANNUAL_365');
+CREATE TYPE "FrequencyPattern" AS ENUM ('DAILY_1', 'WEEKLY_7', 'BIWEEKLY_15', 'MONTHLY_30', 'BIMONTHLY_60', 'QUARTERLY_90', 'SEMESTERLY_180', 'YEARLY_365');
+
+-- CreateEnum
+CREATE TYPE "ContractIndicatorType" AS ENUM ('MIN_BALANCE', 'FINANCIAL_FLOW', 'AVERAGE_BALANCE');
 
 -- CreateTable
 CREATE TABLE "contracts" (
@@ -14,10 +17,12 @@ CREATE TABLE "contracts" (
 -- CreateTable
 CREATE TABLE "contract_indicators" (
     "id" TEXT NOT NULL,
-    "type" TEXT NOT NULL,
+    "type" "ContractIndicatorType" NOT NULL,
     "balance" DECIMAL(10,2) NOT NULL,
+    "threshold" DECIMAL(10,2) NOT NULL,
     "description" TEXT NOT NULL,
-    "contractId" TEXT,
+    "lastBalance" JSON[] DEFAULT ARRAY[]::JSON[],
+    "ownerId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -31,8 +36,8 @@ CREATE TABLE "scheduled_contract_indicators" (
     "lastExecutionDate" TIMESTAMP(3),
     "frequency" "FrequencyPattern" NOT NULL DEFAULT 'MONTHLY_30',
     "contractIndicatorId" TEXT NOT NULL,
-    "customerId" TEXT NOT NULL,
     "contractId" TEXT NOT NULL,
+    "customerId" TEXT NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
 
@@ -42,7 +47,7 @@ CREATE TABLE "scheduled_contract_indicators" (
 -- CreateTable
 CREATE TABLE "customers" (
     "id" TEXT NOT NULL,
-    "username" TEXT NOT NULL,
+    "userName" TEXT NOT NULL,
     "contractId" TEXT,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -51,25 +56,25 @@ CREATE TABLE "customers" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "contract_indicators_type_key" ON "contract_indicators"("type");
+CREATE UNIQUE INDEX "scheduled_contract_indicators_contractIndicatorId_key" ON "scheduled_contract_indicators"("contractIndicatorId");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "customers_username_key" ON "customers"("username");
+CREATE UNIQUE INDEX "customers_userName_key" ON "customers"("userName");
 
 -- AddForeignKey
 ALTER TABLE "contracts" ADD CONSTRAINT "contracts_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "customers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "contract_indicators" ADD CONSTRAINT "contract_indicators_contractId_fkey" FOREIGN KEY ("contractId") REFERENCES "contracts"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+ALTER TABLE "contract_indicators" ADD CONSTRAINT "contract_indicators_ownerId_fkey" FOREIGN KEY ("ownerId") REFERENCES "customers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "scheduled_contract_indicators" ADD CONSTRAINT "scheduled_contract_indicators_contractIndicatorId_fkey" FOREIGN KEY ("contractIndicatorId") REFERENCES "contract_indicators"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "scheduled_contract_indicators" ADD CONSTRAINT "scheduled_contract_indicators_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "scheduled_contract_indicators" ADD CONSTRAINT "scheduled_contract_indicators_contractId_fkey" FOREIGN KEY ("contractId") REFERENCES "contracts"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "scheduled_contract_indicators" ADD CONSTRAINT "scheduled_contract_indicators_contractId_fkey" FOREIGN KEY ("contractId") REFERENCES "contracts"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "scheduled_contract_indicators" ADD CONSTRAINT "scheduled_contract_indicators_customerId_fkey" FOREIGN KEY ("customerId") REFERENCES "customers"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "customers" ADD CONSTRAINT "customers_contractId_fkey" FOREIGN KEY ("contractId") REFERENCES "contracts"("id") ON DELETE SET NULL ON UPDATE CASCADE;
