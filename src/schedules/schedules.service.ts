@@ -4,13 +4,13 @@ import {
   ConflictException,
   NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from 'src/database/database.service';
 import { CreateScheduleDto, FrequencyPatternUnion } from './schedules.input';
 import {
   ScheduledContractIndicators as ScheduledContractIndicatorsPrisma,
   Contract as ContractPrisma,
   ContractIndicator as ContractIndicatorPrisma,
   Customer as CustomerPrisma,
+  PrismaClient,
 } from '@prisma/client';
 import dayjs from 'dayjs';
 import { ResponseSchedule, HistorySchedule } from './schedules.types';
@@ -18,8 +18,13 @@ import { ResponseSchedule, HistorySchedule } from './schedules.types';
 @Injectable()
 export class SchedulesService {
   private readonly logger = new Logger(SchedulesService.name);
+  private prisma!: PrismaClient;
 
-  constructor(private readonly prisma: PrismaService) {}
+  public setPrisma(prisma: PrismaClient) {
+    this.prisma = prisma;
+
+    return this;
+  }
 
   private nextDate(date: Date, days = 0) {
     const today = dayjs(date);
