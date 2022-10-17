@@ -6,15 +6,11 @@ import { PrismaClient } from '@prisma/client';
 @Injectable()
 export class SchedulerManager {
   private readonly logger = new Logger(SchedulerManager.name);
-  private prisma!: PrismaClient;
 
-  constructor(private schedulerRegistry: SchedulerRegistry) {}
-
-  public setPrisma(prisma: PrismaClient) {
-    this.prisma = prisma;
-
-    return this;
-  }
+  constructor(
+    private readonly schedulerRegistry: SchedulerRegistry,
+    private readonly prisma: PrismaClient,
+  ) {}
 
   addCronJob(name: string, seconds: string) {
     const job = new CronJob(`*/${seconds} * * * * *`, async () => {

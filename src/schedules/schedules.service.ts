@@ -18,13 +18,8 @@ import { ResponseSchedule, HistorySchedule } from './schedules.types';
 @Injectable()
 export class SchedulesService {
   private readonly logger = new Logger(SchedulesService.name);
-  private prisma!: PrismaClient;
 
-  public setPrisma(prisma: PrismaClient) {
-    this.prisma = prisma;
-
-    return this;
-  }
+  constructor(private readonly prisma: PrismaClient) {}
 
   private nextDate(date: Date, days = 0) {
     const today = dayjs(date);
